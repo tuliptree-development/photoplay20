@@ -1,9 +1,9 @@
 # Photo Play 2.0 on a Spirit 2.1 cabinet
 
-This repository holds the notes and the script for one cabinet: a Funworld
-Photo Play Spirit 2.1 with a 6WEV motherboard and an Elo 2500S touchscreen.
-Photo Play 2004 already runs on that cabinet. Photo Play 2.0 (PP20NLC2, July
-1997) does not, until the image below is written to its 2 GB card.
+These notes and this script are for a Funworld Photo Play Spirit 2.1 with a
+6WEV motherboard and an Elo 2500S touchscreen. Photo Play 2004 already
+supports that board. Photo Play 2.0 (PP20NLC2, July 1997) needs the image
+from the script, written to its 2 GB card.
 
 The script builds that image. It starts from a cracked 2.0 card and copies
 four programs out of a Photo Play 2004 image. It leaves the game programs
@@ -30,31 +30,38 @@ when the machine starts.
 
 ## What you need
 
-- A Linux computer with Python 3. The script uses only the Python standard
-  library.
+- Python 3 on Windows, Linux, or macOS. The script uses only the Python
+  standard library.
 - About 2 GB of free disk space for the new image.
-- The cracked Photo Play 2.0 CF image, file name `PP20NLC2_cf.img`, size
-  exactly 2,097,930,240 bytes. Stones is already restored on the image this
-  script was written for. The larger file `PP20NLC2.img` (2,111,864,832
-  bytes) is a different disk. Leave that file unused.
-- A Photo Play 2004 image, file name `PP2004NLC.img`. The script reads four
-  files from it and nothing else: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`,
-  and `C3DMIX.COM`.
-- The 2 GB Photo Play 2.0 card. On the cabinet used here its volume id is
-  `120D-0B23`. Keep the 2004 card (volume `2218-100A`) and the computer's
-  internal disk out of the write step.
+- The cracked Photo Play 2.0 CF image, `PP20NLC2_cf.img`, size exactly
+  2,097,930,240 bytes. The script does not put missing game files back, so
+  the games, including Stones, already have to be in that image. The larger
+  file `PP20NLC2.img` (2,111,864,832 bytes) is a different disk. Leave that
+  file unused.
+- A Photo Play 2004 image, `PP2004NLC.img`. The script reads four files from
+  it and nothing else: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`, and
+  `C3DMIX.COM`.
+- The 2 GB Photo Play 2.0 card. In the write step, pick the disk whose size
+  is about 2 GB. The computer's internal disk and a Photo Play 2004 card are
+  the wrong targets.
 
 ## Step by step
 
 ### 1. Download this repository
 
+With Git, from a terminal:
+
 ```bash
 git clone https://github.com/tuliptree-development/photoplay20.git
 ```
 
+Without Git, open the repository page, choose Code, then Download ZIP, and
+unpack the zip.
+
 ### 2. Put the two disk images next to it
 
-The script looks one folder above itself. This layout matches the defaults:
+When you run the script with no extra arguments, it looks one folder above
+itself. This layout matches those defaults:
 
 ```text
 parent/
@@ -67,71 +74,90 @@ parent/
     PP2004NLC.img              Photo Play 2004 image
 ```
 
-Check the 2.0 file before you continue:
+From that parent folder, check the 2.0 file. This works on Windows, Linux,
+and macOS:
 
 ```bash
-stat -c %s cracked_IGO2000/PP20NLC2_cf.img
+python -c "import os; print(os.path.getsize('cracked_IGO2000/PP20NLC2_cf.img'))"
 ```
 
-The number must be `2097930240`.
+The number must be `2097930240`. If the command `python` is missing, use
+`python3` instead, here and in the next step.
 
-If your images live somewhere else, keep them there and pass the paths in
-step 3.
+Images can also stay in any other folder. Pass their full paths in step 3.
 
 ### 3. Build the cabinet image
 
-From the `photoplay20` folder:
+Open a terminal in the `photoplay20` folder.
+
+With the layout from step 2:
 
 ```bash
-python3 build_cabinet_image.py
+python build_cabinet_image.py
 ```
 
-With images in other folders:
+With the images somewhere else, one line, and your own paths. Quotes matter
+when a path contains spaces:
 
 ```bash
-python3 build_cabinet_image.py \
-  --cracked /path/to/PP20NLC2_cf.img \
-  --pp2004 /path/to/PP2004NLC.img \
-  --output /path/to/PP20NLC2_cabinet.img
+python build_cabinet_image.py --cracked "C:\images\PP20NLC2_cf.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
 ```
+
+On Linux or macOS the same line works. Use the paths on that computer, for
+example `--cracked "$HOME/images/PP20NLC2_cf.img"`.
 
 The script copies the cracked card, then changes that copy. The two source
 images stay as they were. Wait until the last lines say `verified` and
-`wrote ...`. The new file is `cracked_IGO2000/PP20NLC2_cabinet.img`, unless
-you chose another `--output`. It is the same size as the cracked card:
-2,097,930,240 bytes.
+`wrote ...`. With the default layout the new file is
+`cracked_IGO2000/PP20NLC2_cabinet.img`. It is the same size as the cracked
+card: 2,097,930,240 bytes.
 
 The script stops with an error when the 2.0 image has the wrong size, when
 `MAIN.COM` is not the cracked program it expects, or when `ELODEV.EXE` in
 the 2004 image is not the expected file.
 
-### 4. See which device the card is
+### 4. Write the image to the card
 
-Plug in only the 2 GB 2.0 card, then:
+The new file is a whole-card image. Write it to the card itself, so the card
+is replaced. The right card is the one whose size is about 2 GB. The
+internal disk of the computer is larger. Unplug a Photo Play 2004 card
+before this step. Writing takes a few minutes.
 
-```bash
-lsblk -o NAME,SIZE,MODEL,LABEL,UUID,TRAN
-```
-
-Use the name whose size is about 2 GB and whose id is `120D-0B23`. On the
-computer used here that name was `sda`. A different computer, or a different
-USB socket, can show `sdb` or another letter. In the command below, replace
-`sdX` with the letter `lsblk` shows for that card. Leave the internal disk
-and the 2004 card unplugged or, if they are present, do not use their names.
-
-### 5. Write the image to the card
-
-Run this from the parent folder, so the path to the image is correct.
-Replace `sdX` first.
+**Linux.** List the disks:
 
 ```bash
-sudo bash -c 'umount /dev/sdX* 2>/dev/null || true; dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sdX bs=4M conv=fsync status=progress; sync'
+lsblk -o NAME,SIZE,MODEL,TRAN
 ```
 
-Writing takes a few minutes. `status=progress` shows how many bytes have
-been written. The final `sync` stays quiet until the card has finished.
+Find the disk of about 2 GB. Its name might be `sdb`, `sdc`, or another
+letter. Use that name wherever the command says `sdX`. Run the command from
+the parent folder of step 2, or change the `if=` path to where you saved the
+new image:
 
-### 6. Boot the cabinet
+```bash
+sudo umount /dev/sdX* || true
+sudo dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sdX bs=4M conv=fsync status=progress
+sudo sync
+```
+
+`status=progress` shows how many bytes have been written. `sync` stays quiet
+until the card has finished.
+
+**macOS.** List the disks with `diskutil list` and find the disk of about
+2 GB, for example `disk2`. Use that number wherever the command says `N`:
+
+```bash
+diskutil unmountDisk /dev/diskN
+sudo dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/rdiskN bs=4m
+```
+
+**Windows.** Use a program that writes a raw image to a physical disk.
+[balenaEtcher](https://etcher.balena.io/) can do it: Flash from file, choose
+`PP20NLC2_cabinet.img`, then choose the disk of about 2 GB. Win32 Disk Imager
+does the same job: the image file is the source, and the 2 GB removable disk
+is the destination. Read the size shown next to the disk before you start.
+
+### 5. Boot the cabinet
 
 Put the card back in the cabinet and switch it on. After the opening picture
 you get the menu. Touch should respond. Open a game to hear that game's
@@ -189,10 +215,10 @@ That tune does not use the screensaver list.
 
 # Photo Play 2.0 op een Spirit 2.1 kast
 
-Deze repository bevat de notities en het script voor één kast: een Funworld
-Photo Play Spirit 2.1 met een 6WEV-moederbord en een Elo 2500S-touchscreen.
-Photo Play 2004 draait daar al op. Photo Play 2.0 (PP20NLC2, juli 1997) doet
-dat pas nadat de image hieronder op de 2 GB-kaart staat.
+Deze notities en dit script zijn voor een Funworld Photo Play Spirit 2.1 met
+een 6WEV-moederbord en een Elo 2500S-touchscreen. Photo Play 2004 ondersteunt
+dat bord al. Photo Play 2.0 (PP20NLC2, juli 1997) heeft de image uit het
+script nodig, geschreven naar de 2 GB-kaart.
 
 Het script maakt die image. Het begint bij een cracked 2.0-kaart en kopieert
 vier programma's uit een Photo Play 2004-image. De spelprogramma's blijven
@@ -218,32 +244,38 @@ en deze kast heeft een Elo-scherm. De mixer gaat bij het starten op maximaal.
 
 ## Wat je nodig hebt
 
-- Een Linux-computer met Python 3. Het script gebruikt alleen de standaard-
-  bibliotheek van Python.
+- Python 3 op Windows, Linux of macOS. Het script gebruikt alleen de
+  standaardbibliotheek van Python.
 - Ongeveer 2 GB vrije schijfruimte voor de nieuwe image.
-- De cracked Photo Play 2.0 CF-image, bestandsnaam `PP20NLC2_cf.img`, precies
-  2.097.930.240 bytes. Stones staat al terug op de image waarvoor dit script
-  is geschreven. Het grotere bestand `PP20NLC2.img` (2.111.864.832 bytes) is
-  een andere schijf. Laat dat bestand liggen.
-- Een Photo Play 2004-image, bestandsnaam `PP2004NLC.img`. Het script leest
-  daar vier bestanden uit en verder niets: `ELODEV.EXE`, `CKUSB.EXE`,
-  `SETAUDIO.COM` en `C3DMIX.COM`.
-- De 2 GB-kaart van Photo Play 2.0. Op de kast hier is het volume-id
-  `120D-0B23`. De 2004-kaart (volume `2218-100A`) en de interne schijf van
-  de computer blijven buiten de schrijfstap.
+- De cracked Photo Play 2.0 CF-image, `PP20NLC2_cf.img`, precies 2.097.930.240
+  bytes. Het script zet ontbrekende spelbestanden niet terug, dus de spellen,
+  inclusief Stones, moeten al in die image staan. Het grotere bestand
+  `PP20NLC2.img` (2.111.864.832 bytes) is een andere schijf. Laat dat bestand
+  liggen.
+- Een Photo Play 2004-image, `PP2004NLC.img`. Het script leest daar vier
+  bestanden uit en verder niets: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM` en
+  `C3DMIX.COM`.
+- De 2 GB-kaart van Photo Play 2.0. Kies bij het schrijven de schijf van
+  ongeveer 2 GB. De interne schijf van de computer en een Photo Play
+  2004-kaart zijn de verkeerde doelen.
 
 ## Stap voor stap
 
 ### 1. Download deze repository
 
+Met Git, vanuit een terminal:
+
 ```bash
 git clone https://github.com/tuliptree-development/photoplay20.git
 ```
 
+Zonder Git: open de repositorypagina, kies Code, dan Download ZIP, en pak
+de zip uit.
+
 ### 2. Zet de twee schijfimages ernaast
 
-Het script kijkt één map boven zichzelf. Deze indeling hoort bij de
-standaardpaden:
+Zonder extra argumenten kijkt het script één map boven zichzelf. Deze
+indeling hoort bij die standaardpaden:
 
 ```text
 boven/
@@ -256,71 +288,93 @@ boven/
     PP2004NLC.img              Photo Play 2004-image
 ```
 
-Controleer het 2.0-bestand voor je verdergaat:
+Vanuit die bovenliggende map controleer je het 2.0-bestand. Dit werkt op
+Windows, Linux en macOS:
 
 ```bash
-stat -c %s cracked_IGO2000/PP20NLC2_cf.img
+python -c "import os; print(os.path.getsize('cracked_IGO2000/PP20NLC2_cf.img'))"
 ```
 
-Het getal moet `2097930240` zijn.
+Het getal moet `2097930240` zijn. Bestaat het commando `python` niet, gebruik
+dan `python3`, hier en in de volgende stap.
 
-Staan de images ergens anders, laat ze daar en geef de paden mee in stap 3.
+De images mogen ook in een andere map blijven. Geef hun volledige pad mee in
+stap 3.
 
 ### 3. Maak de kastimage
 
-Vanuit de map `photoplay20`:
+Open een terminal in de map `photoplay20`.
+
+Met de indeling uit stap 2:
 
 ```bash
-python3 build_cabinet_image.py
+python build_cabinet_image.py
 ```
 
-Met images in andere mappen:
+Met de images ergens anders, op één regel, met je eigen paden. Aanhalingstekens
+zijn nodig als een pad spaties bevat:
 
 ```bash
-python3 build_cabinet_image.py \
-  --cracked /pad/naar/PP20NLC2_cf.img \
-  --pp2004 /pad/naar/PP2004NLC.img \
-  --output /pad/naar/PP20NLC2_cabinet.img
+python build_cabinet_image.py --cracked "C:\images\PP20NLC2_cf.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
 ```
+
+Op Linux of macOS werkt dezelfde regel. Gebruik de paden van die computer,
+bijvoorbeeld `--cracked "$HOME/images/PP20NLC2_cf.img"`.
 
 Het script kopieert de cracked kaart en past die kopie aan. De twee
 bronimages blijven zoals ze waren. Wacht tot de laatste regels `verified`
-en `wrote ...` zeggen. Het nieuwe bestand is
-`cracked_IGO2000/PP20NLC2_cabinet.img`, tenzij je een ander `--output` koos.
-Het is even groot als de cracked kaart: 2.097.930.240 bytes.
+en `wrote ...` zeggen. Bij de standaardindeling is het nieuwe bestand
+`cracked_IGO2000/PP20NLC2_cabinet.img`. Het is even groot als de cracked
+kaart: 2.097.930.240 bytes.
 
 Het script stopt met een fout als de 2.0-image de verkeerde grootte heeft,
 als `MAIN.COM` niet het cracked programma is dat het verwacht, of als
 `ELODEV.EXE` in de 2004-image niet het verwachte bestand is.
 
-### 4. Kijk welk apparaat de kaart is
+### 4. Schrijf de image naar de kaart
 
-Sluit alleen de 2 GB-kaart van 2.0 aan, en dan:
+Het nieuwe bestand is een image van de hele kaart. Schrijf het naar de kaart
+zelf, zodat de kaart wordt vervangen. De juiste kaart is degene van ongeveer
+2 GB. De interne schijf van de computer is groter. Koppel een Photo Play
+2004-kaart los voor deze stap. Schrijven duurt een paar minuten.
 
-```bash
-lsblk -o NAME,SIZE,MODEL,LABEL,UUID,TRAN
-```
-
-Gebruik de naam waarvan de grootte ongeveer 2 GB is en het id `120D-0B23`.
-Op de computer hier was die naam `sda`. Een andere computer, of een andere
-USB-aansluiting, kan `sdb` of een andere letter tonen. Vervang in het
-commando hieronder `sdX` door de letter die `lsblk` voor die kaart toont.
-Laat de interne schijf en de 2004-kaart losgekoppeld, of gebruik hun namen
-niet als ze wel aanwezig zijn.
-
-### 5. Schrijf de image naar de kaart
-
-Voer dit uit vanuit de bovenliggende map, zodat het pad naar de image klopt.
-Vervang eerst `sdX`.
+**Linux.** Toon de schijven:
 
 ```bash
-sudo bash -c 'umount /dev/sdX* 2>/dev/null || true; dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sdX bs=4M conv=fsync status=progress; sync'
+lsblk -o NAME,SIZE,MODEL,TRAN
 ```
 
-Schrijven duurt een paar minuten. `status=progress` toont hoeveel bytes al
-geschreven zijn. De laatste `sync` blijft stil tot de kaart klaar is.
+Zoek de schijf van ongeveer 2 GB. De naam kan `sdb`, `sdc` of een andere
+letter zijn. Gebruik die naam overal waar het commando `sdX` zegt. Voer het
+uit vanuit de bovenliggende map van stap 2, of pas het `if=`-pad aan naar de
+plek van de nieuwe image:
 
-### 6. Start de kast
+```bash
+sudo umount /dev/sdX* || true
+sudo dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sdX bs=4M conv=fsync status=progress
+sudo sync
+```
+
+`status=progress` toont hoeveel bytes al geschreven zijn. `sync` blijft stil
+tot de kaart klaar is.
+
+**macOS.** Toon de schijven met `diskutil list` en zoek de schijf van
+ongeveer 2 GB, bijvoorbeeld `disk2`. Gebruik dat nummer overal waar het
+commando `N` zegt:
+
+```bash
+diskutil unmountDisk /dev/diskN
+sudo dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/rdiskN bs=4m
+```
+
+**Windows.** Gebruik een programma dat een ruwe image naar een fysieke schijf
+schrijft. [balenaEtcher](https://etcher.balena.io/) kan dat: Flash from file,
+kies `PP20NLC2_cabinet.img`, en kies daarna de schijf van ongeveer 2 GB.
+Win32 Disk Imager doet hetzelfde: het imagebestand is de bron, en de
+verwijderbare schijf van 2 GB is de bestemming. Lees de grootte naast de
+schijf voor je start.
+
+### 5. Start de kast
 
 Zet de kaart terug in de kast en schakel hem in. Na het openingsplaatje
 komt het menu. Aanraken moet reageren. Open een spel om de tune van dat
