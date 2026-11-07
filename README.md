@@ -1,65 +1,70 @@
 # Photo Play 2.0 on a Spirit 2.1 cabinet
 
-This is for a Funworld Photo Play Spirit 2.1 with a 6WEV motherboard and an
-Elo 2500S touchscreen. Photo Play 2004 already runs on that cabinet. Photo
-Play 2.0 (PP20NLC2, July 1997) expects a MicroTouch screen and an ESS sound
-chip, so the cracked 2.0 card by itself has no cabinet touch and no cabinet
-sound.
+This repository holds the notes and the script for one cabinet: a Funworld
+Photo Play Spirit 2.1 with a 6WEV motherboard and an Elo 2500S touchscreen.
+Photo Play 2004 already runs on that cabinet. Photo Play 2.0 (PP20NLC2, July
+1997) does not, until the image below is written to its 2 GB card.
 
-The script in this repository builds a 2 GB image that does three things on
-this cabinet:
+The script builds that image. It starts from a cracked 2.0 card and copies
+four programs out of a Photo Play 2004 image. It leaves the game programs
+alone, and it does not remove a dongle check. The cracked 2.0 image is
+already without a dongle.
 
-- the menu starts
-- the Elo screen answers a touch, and one press stays one press
-- games play their own tune, and the menu plays music after the machine has
-  been left alone
+The disk images themselves are not in this repository.
 
-The calibration screen and the louder button in the service menu stay as they
-are on the cracked card. The game programs are left alone. The script does
-not remove a dongle check.
+## What the finished card does
 
-This repository is the instructions and the script. It does not contain the
-game disks.
+- The menu appears after the opening picture.
+- The Elo touchscreen works in the menu and in the games.
+- Each game plays its own tune as soon as it starts.
+- The menu stays quiet while you use it. Music starts after the machine has
+  been left idle. That is the screensaver list.
+- From 1 through 31 December, with the cabinet date in December, the
+  screensaver plays the Christmas tracks.
+- The service button on port 210h is the same as on the cracked card.
+
+The admin calibration screen and the louder button are left as they are.
+The calibration targets are drawn only after a MicroTouch controller
+answers, and this cabinet has an Elo screen. The mixer is set to maximum
+when the machine starts.
 
 ## What you need
 
-- A Linux PC with Python 3. The script uses only the Python standard library.
-  About 2 GB of free disk space.
-- Your cracked Photo Play 2.0 CompactFlash image, file name
-  `PP20NLC2_cf.img`, size exactly **2,097,930,240** bytes. That is the image
-  that already has the Stones files put back. `MAIN.COM` in that image is
-  md5 `e711b369a8ce1f2e1c11ca636bd82935`.
-- Your Photo Play 2004 image, file name `PP2004NLC.img`. The script only
-  reads four files from it: `TOUCH\ELO\ELODEV.EXE`, `SOUND\6WEV\CKUSB.EXE`,
-  `SOUND\CMEDIA\SETAUDIO.COM`, and `SOUND\CMEDIA\C3DMIX.COM`. `ELODEV.EXE`
-  must be md5 `b17373ea623f8e77bd05df2896d7b3c5`. The 2004 image used here is
-  2,111,864,832 bytes.
-- The 2 GB Photo Play 2.0 card, volume `120D-0B23`. Leave the 2004 card
-  (volume `2218-100A`) and the PC's internal disk in place.
-
-`PP20NLC2.img` is the larger cracked file, 2,111,864,832 bytes. The script
-stops if you give it that file. The cabinet card is the smaller one.
+- A Linux computer with Python 3. The script uses only the Python standard
+  library.
+- About 2 GB of free disk space for the new image.
+- The cracked Photo Play 2.0 CF image, file name `PP20NLC2_cf.img`, size
+  exactly 2,097,930,240 bytes. Stones is already restored on the image this
+  script was written for. The larger file `PP20NLC2.img` (2,111,864,832
+  bytes) is a different disk. Leave that file unused.
+- A Photo Play 2004 image, file name `PP2004NLC.img`. The script reads four
+  files from it and nothing else: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`,
+  and `C3DMIX.COM`.
+- The 2 GB Photo Play 2.0 card. On the cabinet used here its volume id is
+  `120D-0B23`. Keep the 2004 card (volume `2218-100A`) and the computer's
+  internal disk out of the write step.
 
 ## Step by step
 
 ### 1. Download this repository
 
 ```bash
-mkdir -p ~/photoplay
-cd ~/photoplay
 git clone https://github.com/tuliptree-development/photoplay20.git
 ```
 
 ### 2. Put the two disk images next to it
 
-The script looks for the images in the folder that contains `photoplay20`.
-Create that layout:
+The script looks one folder above itself. This layout matches the defaults:
 
 ```text
-photoplay/
-  photoplay20/                         this repository
-  cracked_IGO2000/PP20NLC2_cf.img      cracked 2.0 card, 2,097,930,240 bytes
-  cracked_IGO2004/PP2004NLC.img        2004 image, source of Elo and C-Media
+parent/
+  photoplay20/                 this repository
+    build_cabinet_image.py
+    README.md
+  cracked_IGO2000/
+    PP20NLC2_cf.img            cracked 2.0 card, 2,097,930,240 bytes
+  cracked_IGO2004/
+    PP2004NLC.img              Photo Play 2004 image
 ```
 
 Check the 2.0 file before you continue:
@@ -70,240 +75,188 @@ stat -c %s cracked_IGO2000/PP20NLC2_cf.img
 
 The number must be `2097930240`.
 
-If your images live somewhere else, you can point at them in step 3. The
-output must be a new file. The script refuses to overwrite either input.
+If your images live somewhere else, keep them there and pass the paths in
+step 3.
 
 ### 3. Build the cabinet image
 
-From `~/photoplay`:
+From the `photoplay20` folder:
 
 ```bash
-python3 photoplay20/build_cabinet_image.py
+python3 build_cabinet_image.py
 ```
 
-Or, with your own paths:
+With images in other folders:
 
 ```bash
-python3 photoplay20/build_cabinet_image.py \
+python3 build_cabinet_image.py \
   --cracked /path/to/PP20NLC2_cf.img \
   --pp2004 /path/to/PP2004NLC.img \
   --output /path/to/PP20NLC2_cabinet.img
 ```
 
-The script copies the cracked card, then:
+The script copies the cracked card, then changes that copy. The two source
+images stay as they were. Wait until the last lines say `verified` and
+`wrote ...`. The new file is `cracked_IGO2000/PP20NLC2_cabinet.img`, unless
+you chose another `--output`. It is the same size as the cracked card:
+2,097,930,240 bytes.
 
-1. Patches `MAIN.COM` so Elo starts in mode `0x0E`, with a pause of about
-   50 ms before a finger-up counts. The patched file must be md5
+The script stops with an error when the 2.0 image has the wrong size, when
+`MAIN.COM` is not the cracked program it expects, or when `ELODEV.EXE` in
+the 2004 image is not the expected file.
+
+### 4. See which device the card is
+
+Plug in only the 2 GB 2.0 card, then:
+
+```bash
+lsblk -o NAME,SIZE,MODEL,LABEL,UUID,TRAN
+```
+
+Use the name whose size is about 2 GB and whose id is `120D-0B23`. On the
+computer used here that name was `sda`. A different computer, or a different
+USB socket, can show `sdb` or another letter. In the command below, replace
+`sdX` with the letter `lsblk` shows for that card. Leave the internal disk
+and the 2004 card unplugged or, if they are present, do not use their names.
+
+### 5. Write the image to the card
+
+Run this from the parent folder, so the path to the image is correct.
+Replace `sdX` first.
+
+```bash
+sudo bash -c 'umount /dev/sdX* 2>/dev/null || true; dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sdX bs=4M conv=fsync status=progress; sync'
+```
+
+Writing takes a few minutes. `status=progress` shows how many bytes have
+been written. The final `sync` stays quiet until the card has finished.
+
+### 6. Boot the cabinet
+
+Put the card back in the cabinet and switch it on. After the opening picture
+you get the menu. Touch should respond. Open a game to hear that game's
+tune. Leave the menu alone for a while to hear the screensaver music.
+
+## What the script changes
+
+1. It copies the cracked 2.0 card to a new file.
+2. It patches `MAIN.COM` so the Elo driver starts in mode `0x0E`, and so a
+   finger-up counts only after about 50 ms. The patched file must have md5
    `0b7385681f88c946a1ad9b907f6952cc`.
-2. Adds the Elo startup line to `AUTOPTS.BAT`, before `main.com`.
-3. Replaces `SOUND\SND_INIT.BAT` with the C-Media startup. `BLASTER` stays
-   `A220 I5 D1 T4`.
-4. Turns the screensaver list on, with the track lengths from the original
-   2.0 disk.
-5. Copies in `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`, and `C3DMIX.COM`.
+3. It adds this line to `AUTOPTS.BAT`, before `main.com`:
 
-A good run ends with these two lines:
+   ```text
+   ELODEV 2310,3,9600,3 -C1,4096,4096,1,1,255 -W0 -I65
+   ```
 
-```text
-verified
-wrote .../PP20NLC2_cabinet.img
-```
+4. It replaces `SOUND\SND_INIT.BAT` with the C-Media startup from the 2004
+   card: `CKUSB`, `SETAUDIO`, `SET BLASTER=A220 I5 D1 T4`, then the mixer at
+   maximum. There is no `H5` in that line.
+5. It turns the screensaver list on, with the timings from the original
+   disk. The number after `;` is seconds, the length of the track.
+6. It copies in `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`, and `C3DMIX.COM`.
 
-The new file is the same size as the cracked card, 2,097,930,240 bytes. The
-two source images are unchanged.
-
-### 4. Write it to the 2.0 card
-
-Look at the disks first:
-
-```bash
-lsblk -o NAME,SIZE,MODEL,LABEL,UUID,MOUNTPOINT
-```
-
-Write only when the 2 GB device is the Photo Play 2.0 card. On the machine
-used for this cabinet that device was `/dev/sda` and the volume id was
-`120D-0B23`. Your letter can be different. The internal disk and the 2004
-card stay as they are.
-
-```bash
-sudo bash -c 'umount /dev/sda* 2>/dev/null || true; dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sda bs=4M conv=fsync status=progress; sync'
-```
-
-Change `sda` if `lsblk` shows another name. The copy takes a few minutes.
-`status=progress` shows bytes and speed. `sync` sits there with no new line,
-then the command returns. That is the end of the write.
-
-### 5. Boot the cabinet
-
-Put the card back in the cabinet and start it. You get the opening picture,
-then the menu.
-
-- A touch on the menu and in a game lands where the finger is. A finger-up
-  counts after about 50 ms, so the screen bounce does not turn one press
-  into several.
-- Starting a game plays that game's own tune.
-- The menu stays quiet until the machine sits idle. Then the screensaver
-  plays `class001.wav` for 60 seconds, `schwing.wav` for 30 seconds, and
-  `tech_1.wav` for 30 seconds, with short effects between them.
-- From 1 December through 31 December the Christmas tracks play instead, each
-  up to 300 seconds. The cabinet date decides which list is used. A dead
-  clock battery can land on the December list.
-
-The service button on port `210h` is the original cabinet button.
-
-## What you still see from the cracked card
-
-The service menu can open the calibration page, and that page draws no
-targets. The Elo board does not answer the old MicroTouch calibration
-commands, and the menu program cannot be changed. Gameplay uses a fixed map
-from the glass onto 640×480.
-
-The louder button does not move the mixer. The mixer is set to maximum when
-the card starts. `LOUDNESS.INI` is only a stored number.
-
-## If the script stops
-
-| Message | What to do |
-| --- | --- |
-| cracked image must be the 2,097,930,240-byte CF image | You gave it `PP20NLC2.img` or another dump. Use the CF-sized file. |
-| MAIN.COM md5 is …, expected the cracked … | This is a different `MAIN.COM` from the one the patch fits. |
-| ELODEV.EXE from the 2004 image is not the expected file | The 2004 image does not contain the Elo driver this cabinet uses. |
-| AUTOPTS.BAT does not have the cracked startup | `AUTOPTS.BAT` was already edited. Start again from the untouched cracked card. |
-| verified, then wrote | The image is ready to copy to the 2.0 card. |
+`HIMEM` stays `himem486.sys`. That is the memory manager the cabinet already
+uses to reach the menu.
 
 ## Why the cracked card needed this
 
-### Touch
+Photo Play 2.0 expects a MicroTouch screen. The Spirit cabinet has an Elo
+2500S. The games never read the serial port themselves. `MAIN.COM` owns COM3
+and hands a touch to the game.
 
-The games never read the serial port. `MAIN.COM` owns COM3 and hands a game
-a touch through interrupt `62h`: `CX` is X, `DX` is Y, `BL` is 1 for down and
-0 for up. The same point is stored at `0x25A`, `0x25C`, and `0x25E`.
+The Elo driver can wait 50 ms before it reports a finger-up, but that wait
+uses the PC timer. `MAIN.COM` takes that timer over and does not pass it on,
+so the finger-up never arrived and the first screen sat there. With `-W0`
+the driver reports the lift itself. `MAIN.COM` then waits about 50 ms on its
+own timer. Without that short wait, one touch became several touches.
 
-The Elo 2500S speaks SmartSet at 9600 8N1, in 10-byte packets that start
-with `0x55`. The driver from the 2004 disk is started before `main.com`:
+The 2.0 startup looks for an ESS sound chip. The 6WEV board has a C-Media
+chip, which is what Photo Play 2004 starts. The 2.0 music files are 8-bit,
+mono, 22050 Hz, and they use DMA 1, so the Sound Blaster line stays
+`A220 I5 D1 T4`.
 
-```text
-ELODEV 2310,3,9600,3 -C1,4096,4096,1,1,255 -W0 -I65
-```
-
-`2310` is the IntelliTouch E281-2310. `-C` is the glass range, with Y
-reversed. `-I65` is the driver interrupt. Mode `0x0E` means a stream of
-touches, including the lift, already converted to screen pixels.
-
-`-W50` asked the driver to wait 50 ms before reporting a lift. That wait
-uses the PC timer. `MAIN.COM` replaces the timer and does not call the
-previous handler, so the lift never arrived and the opening screen waited
-forever. `-W0` makes the driver report the lift itself. `MAIN.COM` then
-waits 5 timer ticks, about 50 ms, before it accepts the lift. A new touch
-during that wait cancels it. Without the wait, screen bounce turned one
-press into many.
-
-The working `MAIN.COM` is md5 `0b7385681f88c946a1ad9b907f6952cc`. The service
-button bytes at file offset `0xC0B` stay `ba 10 02 ec 24 01`.
-
-### Sound
-
-2.0 looks for an ESS chip. The 6WEV board has a C-Media chip, which is what
-2004 starts: `CKUSB.EXE` turns the USB audio path off, `SETAUDIO` sets Sound
-Blaster address 220, IRQ 5, DMA 1, and `C3DMIX` sets the mixer. The 2.0 music
-files are 8-bit mono at 22050 Hz and use DMA 1. `BLASTER` stays
-`A220 I5 D1 T4`. The 16-bit DMA value `H5` from the 2004 startup is left out.
-
-The first music card started the chip, set `H5`, and turned the playlist on
-while the opening picture was still showing. The picture stayed on screen.
-The working order was chip startup first, with the list off, and the list
-only after that card had reached the menu.
-
-The memory manager stays `himem486.sys`. The 2004 `HIMEM` swap and its reboot
-program are left out.
-
-### Menu music
-
-`MENU.EXE` is the same file on the cracked disk and on the original disk.
-The cracked `MAIN\PLAY_SND.INI` has the list switched off and the tracks set
-to 0 seconds, so the menu stays silent. The number after the semicolon is
-seconds, the length of the track.
-
-The cabinet image uses the original list: 60, 30, and 30 seconds for the
-three main tracks, short effects, and the December Christmas tracks at up to
-300 seconds.
-
-A tune that starts with a game comes from that game's own folder, such as
-`STONES\TITLTUNE.WAV`. Those files do not use `PLAY_SND.INI`.
-
-### Calibration
-
-Building a fake MicroTouch answer into `MAIN.COM` removed the menu. One
-build had a timer jump with a missing byte and froze on the opening picture.
-Later builds reached a black screen once the working timer routine, or the
-pixel touch mode, was replaced. The working timer is the one in this script.
-The calibration page is left as it is.
+The menu program is the same file on the cracked disk and on the original
+disk. On the cracked disk `MAIN\PLAY_SND.INI` is off and the tracks are set
+to 0 seconds, so the menu stays silent. The cabinet image uses the original
+list: `class001.wav` for 60 seconds, `schwing.wav` for 30 seconds,
+`tech_1.wav` for 30 seconds, short effects in between, and the Christmas
+tracks (up to 300 seconds each) from 1 through 31 December. A tune that
+starts with a game comes from that game, for example `STONES\TITLTUNE.WAV`.
+That tune does not use the screensaver list.
 
 ---
 
 # Photo Play 2.0 op een Spirit 2.1 kast
 
-Dit is voor een Funworld Photo Play Spirit 2.1 met een 6WEV-moederbord en
-een Elo 2500S-touchscreen. Photo Play 2004 draait op die kast al. Photo Play
-2.0 (PP20NLC2, juli 1997) verwacht een MicroTouch-scherm en een ESS-geluidschip,
-dus de cracked 2.0-kaart alleen heeft geen touch en geen geluid van deze kast.
+Deze repository bevat de notities en het script voor één kast: een Funworld
+Photo Play Spirit 2.1 met een 6WEV-moederbord en een Elo 2500S-touchscreen.
+Photo Play 2004 draait daar al op. Photo Play 2.0 (PP20NLC2, juli 1997) doet
+dat pas nadat de image hieronder op de 2 GB-kaart staat.
 
-Het script in deze repository bouwt een image van 2 GB die op deze kast drie
-dingen doet:
+Het script maakt die image. Het begint bij een cracked 2.0-kaart en kopieert
+vier programma's uit een Photo Play 2004-image. De spelprogramma's blijven
+staan, en een dongle-check wordt niet weggehaald. De cracked 2.0-image is al
+zonder dongle.
 
-- het menu start
-- het Elo-scherm reageert op een aanraking, en één druk blijft één druk
-- een spel speelt zijn eigen tune, en het menu speelt muziek nadat de kast
-  even met rust is gelaten
+De schijfimages zelf zitten niet in deze repository.
 
-Het calibratiescherm en de luider-knop in het servicemenu blijven zoals op de
-cracked kaart. De spelprogramma's blijven onaangeroerd. Het script haalt geen
-dongle-check weg.
+## Wat de afgewerkte kaart doet
 
-Deze repository is de uitleg en het script. De spelschijven zitten er niet in.
+- Het menu verschijnt na het openingsplaatje.
+- Het Elo-touchscreen werkt in het menu en in de spellen.
+- Elk spel speelt meteen zijn eigen tune.
+- Het menu blijft stil zolang je het gebruikt. Muziek begint nadat de kast
+  even met rust is gelaten. Dat is de screensaverlijst.
+- Van 1 tot en met 31 december, als de datum van de kast in december valt,
+  speelt de screensaver de kerstnummers.
+- De serviceknop op poort 210h is dezelfde als op de cracked kaart.
+
+Het admin-scherm voor calibratie en de luider-knop blijven zoals ze zijn.
+De calibratiedoelen verschijnen pas als een MicroTouch-controller antwoordt,
+en deze kast heeft een Elo-scherm. De mixer gaat bij het starten op maximaal.
 
 ## Wat je nodig hebt
 
-- Een Linux-pc met Python 3. Het script gebruikt alleen de standaardbibliotheek
-  van Python. Ongeveer 2 GB vrije schijfruimte.
-- Je cracked Photo Play 2.0 CompactFlash-image, bestandsnaam
-  `PP20NLC2_cf.img`, grootte precies **2.097.930.240** bytes. Dat is de image
-  waarin de Stones-bestanden al zijn teruggezet. `MAIN.COM` in die image is
-  md5 `e711b369a8ce1f2e1c11ca636bd82935`.
-- Je Photo Play 2004-image, bestandsnaam `PP2004NLC.img`. Het script leest
-  daar vier bestanden uit: `TOUCH\ELO\ELODEV.EXE`, `SOUND\6WEV\CKUSB.EXE`,
-  `SOUND\CMEDIA\SETAUDIO.COM` en `SOUND\CMEDIA\C3DMIX.COM`. `ELODEV.EXE`
-  moet md5 `b17373ea623f8e77bd05df2896d7b3c5` zijn. De 2004-image die hier is
-  gebruikt is 2.111.864.832 bytes.
-- De 2 GB-kaart van Photo Play 2.0, volume `120D-0B23`. De 2004-kaart
-  (volume `2218-100A`) en de interne schijf van de pc blijven zoals ze zijn.
-
-`PP20NLC2.img` is het grotere cracked bestand, 2.111.864.832 bytes. Het script
-stopt als je dat bestand geeft. De kastkaart is de kleinere.
+- Een Linux-computer met Python 3. Het script gebruikt alleen de standaard-
+  bibliotheek van Python.
+- Ongeveer 2 GB vrije schijfruimte voor de nieuwe image.
+- De cracked Photo Play 2.0 CF-image, bestandsnaam `PP20NLC2_cf.img`, precies
+  2.097.930.240 bytes. Stones staat al terug op de image waarvoor dit script
+  is geschreven. Het grotere bestand `PP20NLC2.img` (2.111.864.832 bytes) is
+  een andere schijf. Laat dat bestand liggen.
+- Een Photo Play 2004-image, bestandsnaam `PP2004NLC.img`. Het script leest
+  daar vier bestanden uit en verder niets: `ELODEV.EXE`, `CKUSB.EXE`,
+  `SETAUDIO.COM` en `C3DMIX.COM`.
+- De 2 GB-kaart van Photo Play 2.0. Op de kast hier is het volume-id
+  `120D-0B23`. De 2004-kaart (volume `2218-100A`) en de interne schijf van
+  de computer blijven buiten de schrijfstap.
 
 ## Stap voor stap
 
 ### 1. Download deze repository
 
 ```bash
-mkdir -p ~/photoplay
-cd ~/photoplay
 git clone https://github.com/tuliptree-development/photoplay20.git
 ```
 
-### 2. Leg de twee schijfimages ernaast
+### 2. Zet de twee schijfimages ernaast
 
-Het script zoekt de images in de map waarin `photoplay20` staat. Maak deze
-indeling:
+Het script kijkt één map boven zichzelf. Deze indeling hoort bij de
+standaardpaden:
 
 ```text
-photoplay/
-  photoplay20/                         deze repository
-  cracked_IGO2000/PP20NLC2_cf.img      cracked 2.0-kaart, 2.097.930.240 bytes
-  cracked_IGO2004/PP2004NLC.img        2004-image, bron van Elo en C-Media
+boven/
+  photoplay20/                 deze repository
+    build_cabinet_image.py
+    README.md
+  cracked_IGO2000/
+    PP20NLC2_cf.img            cracked 2.0-kaart, 2.097.930.240 bytes
+  cracked_IGO2004/
+    PP2004NLC.img              Photo Play 2004-image
 ```
 
-Controleer het 2.0-bestand voor je verder gaat:
+Controleer het 2.0-bestand voor je verdergaat:
 
 ```bash
 stat -c %s cracked_IGO2000/PP20NLC2_cf.img
@@ -311,173 +264,114 @@ stat -c %s cracked_IGO2000/PP20NLC2_cf.img
 
 Het getal moet `2097930240` zijn.
 
-Staan de images ergens anders, dan wijs je ze in stap 3 aan. De uitvoer moet
-een nieuw bestand zijn. Het script weigert een van de invoerbestanden te
-overschrijven.
+Staan de images ergens anders, laat ze daar en geef de paden mee in stap 3.
 
-### 3. Bouw de kastimage
+### 3. Maak de kastimage
 
-Vanuit `~/photoplay`:
+Vanuit de map `photoplay20`:
 
 ```bash
-python3 photoplay20/build_cabinet_image.py
+python3 build_cabinet_image.py
 ```
 
-Of met je eigen paden:
+Met images in andere mappen:
 
 ```bash
-python3 photoplay20/build_cabinet_image.py \
+python3 build_cabinet_image.py \
   --cracked /pad/naar/PP20NLC2_cf.img \
   --pp2004 /pad/naar/PP2004NLC.img \
   --output /pad/naar/PP20NLC2_cabinet.img
 ```
 
-Het script kopieert de cracked kaart en doet daarna dit:
+Het script kopieert de cracked kaart en past die kopie aan. De twee
+bronimages blijven zoals ze waren. Wacht tot de laatste regels `verified`
+en `wrote ...` zeggen. Het nieuwe bestand is
+`cracked_IGO2000/PP20NLC2_cabinet.img`, tenzij je een ander `--output` koos.
+Het is even groot als de cracked kaart: 2.097.930.240 bytes.
 
-1. Past `MAIN.COM` aan zodat Elo start in mode `0x0E`, met een pauze van
-   ongeveer 50 ms voor een vinger omhoog telt. Het aangepaste bestand moet
-   md5 `0b7385681f88c946a1ad9b907f6952cc` zijn.
-2. Zet de Elo-startregel in `AUTOPTS.BAT`, vóór `main.com`.
-3. Vervangt `SOUND\SND_INIT.BAT` door de C-Media-start. `BLASTER` blijft
-   `A220 I5 D1 T4`.
-4. Zet de screensaverlijst aan, met de nummertijden van de originele
-   2.0-schijf.
-5. Kopieert `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM` en `C3DMIX.COM` erbij.
+Het script stopt met een fout als de 2.0-image de verkeerde grootte heeft,
+als `MAIN.COM` niet het cracked programma is dat het verwacht, of als
+`ELODEV.EXE` in de 2004-image niet het verwachte bestand is.
 
-Een goede run eindigt met deze twee regels:
+### 4. Kijk welk apparaat de kaart is
 
-```text
-verified
-wrote .../PP20NLC2_cabinet.img
-```
-
-Het nieuwe bestand is even groot als de cracked kaart, 2.097.930.240 bytes.
-De twee bronimages blijven ongewijzigd.
-
-### 4. Schrijf hem naar de 2.0-kaart
-
-Kijk eerst naar de schijven:
+Sluit alleen de 2 GB-kaart van 2.0 aan, en dan:
 
 ```bash
-lsblk -o NAME,SIZE,MODEL,LABEL,UUID,MOUNTPOINT
+lsblk -o NAME,SIZE,MODEL,LABEL,UUID,TRAN
 ```
 
-Schrijf pas als het 2 GB-apparaat de Photo Play 2.0-kaart is. Op de pc waarmee
-deze kast is gemaakt was dat `/dev/sda` en was het volume `120D-0B23`. De
-letter kan bij jou anders zijn. De interne schijf en de 2004-kaart blijven
-zoals ze zijn.
+Gebruik de naam waarvan de grootte ongeveer 2 GB is en het id `120D-0B23`.
+Op de computer hier was die naam `sda`. Een andere computer, of een andere
+USB-aansluiting, kan `sdb` of een andere letter tonen. Vervang in het
+commando hieronder `sdX` door de letter die `lsblk` voor die kaart toont.
+Laat de interne schijf en de 2004-kaart losgekoppeld, of gebruik hun namen
+niet als ze wel aanwezig zijn.
+
+### 5. Schrijf de image naar de kaart
+
+Voer dit uit vanuit de bovenliggende map, zodat het pad naar de image klopt.
+Vervang eerst `sdX`.
 
 ```bash
-sudo bash -c 'umount /dev/sda* 2>/dev/null || true; dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sda bs=4M conv=fsync status=progress; sync'
+sudo bash -c 'umount /dev/sdX* 2>/dev/null || true; dd if="cracked_IGO2000/PP20NLC2_cabinet.img" of=/dev/sdX bs=4M conv=fsync status=progress; sync'
 ```
 
-Verander `sda` als `lsblk` een andere naam toont. Het schrijven duurt een
-paar minuten. `status=progress` toont bytes en snelheid. `sync` blijft staan
-zonder nieuwe regel, en daarna keert het commando terug. Dan is het schrijven
-klaar.
+Schrijven duurt een paar minuten. `status=progress` toont hoeveel bytes al
+geschreven zijn. De laatste `sync` blijft stil tot de kaart klaar is.
 
-### 5. Start de kast
+### 6. Start de kast
 
-Zet de kaart terug in de kast en start hem. Je krijgt het openingsplaatje,
-daarna het menu.
+Zet de kaart terug in de kast en schakel hem in. Na het openingsplaatje
+komt het menu. Aanraken moet reageren. Open een spel om de tune van dat
+spel te horen. Laat het menu even met rust om de screensavermuziek te horen.
 
-- Een aanraking op het menu en in een spel komt waar de vinger staat. Een
-  vinger omhoog telt na ongeveer 50 ms, zodat het stuiteren van het scherm
-  van één druk geen reeks drukken maakt.
-- Het starten van een spel speelt de tune van dat spel.
-- Het menu blijft stil tot de kast even niets doet. Dan speelt de screensaver
-  `class001.wav` 60 seconden, `schwing.wav` 30 seconden en `tech_1.wav` 30
-  seconden, met korte effecten ertussen.
-- Van 1 december tot en met 31 december spelen de kerstnummers, elk tot 300
-  seconden. De datum van de kast kiest welke lijst dat is. Een lege
-  klokbatterij kan op de decemberlijst uitkomen.
+## Wat het script verandert
 
-De serviceknop op poort `210h` is de oorspronkelijke kastknop.
+1. Het kopieert de cracked 2.0-kaart naar een nieuw bestand.
+2. Het past `MAIN.COM` aan, zodat de Elo-driver in mode `0x0E` start en een
+   loslaten pas na ongeveer 50 ms telt. Het aangepaste bestand moet md5
+   `0b7385681f88c946a1ad9b907f6952cc` hebben.
+3. Het zet deze regel in `AUTOPTS.BAT`, vóór `main.com`:
 
-## Wat je nog van de cracked kaart houdt
+   ```text
+   ELODEV 2310,3,9600,3 -C1,4096,4096,1,1,255 -W0 -I65
+   ```
 
-Het servicemenu kan de calibratiepagina openen, en die pagina tekent geen
-doelen. Het Elo-bord antwoordt niet op de oude MicroTouch-calibratiecommando's,
-en het menuprogramma is niet te wijzigen. Het spelen gebruikt een vaste
-indeling van het glas naar 640×480.
+4. Het vervangt `SOUND\SND_INIT.BAT` door de C-Media-start van de 2004-kaart:
+   `CKUSB`, `SETAUDIO`, `SET BLASTER=A220 I5 D1 T4`, en daarna de mixer op
+   maximaal. In die regel staat geen `H5`.
+5. Het zet de screensaverlijst aan, met de tijden van de originele schijf.
+   Het getal achter `;` is seconden, de speelduur van het nummer.
+6. Het kopieert `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM` en `C3DMIX.COM`
+   erbij.
 
-De luider-knop verzet de mixer niet. De mixer gaat bij het starten op
-maximaal. `LOUDNESS.INI` is alleen een bewaard getal.
-
-## Als het script stopt
-
-| Melding | Wat je doet |
-| --- | --- |
-| cracked image must be the 2,097,930,240-byte CF image | Je gaf `PP20NLC2.img` of een andere dump. Gebruik het CF-bestand. |
-| MAIN.COM md5 is …, expected the cracked … | Dit is een andere `MAIN.COM` dan waar de patch op past. |
-| ELODEV.EXE from the 2004 image is not the expected file | De 2004-image bevat de Elo-driver van deze kast niet. |
-| AUTOPTS.BAT does not have the cracked startup | `AUTOPTS.BAT` is al eerder bewerkt. Begin opnieuw vanaf de onaangeroerde cracked kaart. |
-| verified, daarna wrote | De image is klaar om naar de 2.0-kaart te kopiëren. |
+`HIMEM` blijft `himem486.sys`. Dat is het geheugenbeheer waarmee de kast het
+menu al haalt.
 
 ## Waarom de cracked kaart dit nodig had
 
-### Touch
+Photo Play 2.0 verwacht een MicroTouch-scherm. De Spirit-kast heeft een Elo
+2500S. De spellen lezen de seriële poort zelf niet. `MAIN.COM` heeft COM3 en
+geeft een aanraking aan het spel door.
 
-De spellen lezen de seriële poort niet. `MAIN.COM` heeft COM3 en geeft een
-spel een aanraking via interrupt `62h`: `CX` is X, `DX` is Y, `BL` is 1 voor
-omlaag en 0 voor omhoog. Hetzelfde punt staat op `0x25A`, `0x25C` en `0x25E`.
+De Elo-driver kan 50 ms wachten voor hij een loslaten meldt, maar die
+wachttijd gebruikt de pc-timer. `MAIN.COM` neemt die timer over en geeft hem
+niet door, waardoor het loslaten nooit aankwam en het eerste scherm bleef
+wachten. Met `-W0` meldt de driver het loslaten zelf. `MAIN.COM` wacht daarna
+ongeveer 50 ms op zijn eigen timer. Zonder die korte pauze werd één
+aanraking een reeks aanrakingen.
 
-De Elo 2500S spreekt SmartSet op 9600 8N1, in pakketten van 10 bytes die
-beginnen met `0x55`. De driver van de 2004-schijf start vóór `main.com`:
+De 2.0-start zoekt een ESS-geluidschip. Het 6WEV-bord heeft een C-Media-chip,
+en die start Photo Play 2004. De muziekbestanden van 2.0 zijn 8-bit, mono,
+22050 Hz, en ze gebruiken DMA 1, dus de Sound Blaster-regel blijft
+`A220 I5 D1 T4`.
 
-```text
-ELODEV 2310,3,9600,3 -C1,4096,4096,1,1,255 -W0 -I65
-```
-
-`2310` is de IntelliTouch E281-2310. `-C` is het bereik van het glas, met Y
-omgekeerd. `-I65` is de driver-interrupt. Mode `0x0E` is een stroom van
-aanrakingen, inclusief het loslaten, al omgerekend naar schermpixels.
-
-`-W50` vroeg de driver 50 ms te wachten voor hij een loslaten meldt. Die
-wachttijd gebruikt de pc-timer. `MAIN.COM` vervangt die timer en roept de
-vorige handler niet aan, dus het loslaten kwam nooit aan en het
-openingsscherm bleef wachten. `-W0` laat de driver het loslaten zelf melden.
-`MAIN.COM` wacht daarna 5 timerticks, ongeveer 50 ms, voor hij het loslaten
-aanneemt. Een nieuwe aanraking in die wachttijd schrapt hem. Zonder de
-wachttijd maakte het stuiteren van het scherm van één druk een reeks.
-
-De werkende `MAIN.COM` is md5 `0b7385681f88c946a1ad9b907f6952cc`. De
-serviceknop op bestandspositie `0xC0B` blijft `ba 10 02 ec 24 01`.
-
-### Geluid
-
-2.0 zoekt een ESS-chip. Het 6WEV-bord heeft een C-Media-chip, en dat is wat
-2004 start: `CKUSB.EXE` zet het USB-geluidspad uit, `SETAUDIO` zet
-Sound Blaster-adres 220, IRQ 5, DMA 1, en `C3DMIX` zet de mixer. De
-muziekbestanden van 2.0 zijn 8-bit mono op 22050 Hz en gebruiken DMA 1.
-`BLASTER` blijft `A220 I5 D1 T4`. De 16-bit DMA-waarde `H5` uit de
-2004-start blijft weg.
-
-De eerste muziekkaart startte de chip, zette `H5` en zette de afspeellijst
-aan terwijl het openingsplaatje nog in beeld stond. Het plaatje bleef staan.
-De werkende volgorde was eerst de chip starten, met de lijst uit, en de lijst
-pas nadat die kaart het menu had gehaald.
-
-De geheugenbeheerder blijft `himem486.sys`. De 2004-verwisseling van `HIMEM`
-en het bijbehorende herstartprogramma blijven weg.
-
-### Menumuziek
-
-`MENU.EXE` is hetzelfde bestand op de cracked schijf en op de originele
-schijf. De cracked `MAIN\PLAY_SND.INI` heeft de lijst uit en de nummers op
-0 seconden, dus het menu blijft stil. Het getal achter de puntkomma is
-seconden, de lengte van het nummer.
-
-De kastimage gebruikt de originele lijst: 60, 30 en 30 seconden voor de drie
-hoofnummers, korte effecten, en de december-kerstnummers tot 300 seconden.
-
-Een tune die met een spel start komt uit de eigen map van dat spel, zoals
-`STONES\TITLTUNE.WAV`. Die bestanden gebruiken `PLAY_SND.INI` niet.
-
-### Calibratie
-
-Een nagemaakt MicroTouch-antwoord in `MAIN.COM` haalde het menu weg. Eén
-bouw had een timersprong waar een byte in ontbrak en bleef op het
-openingsplaatje staan. Latere bouws kregen een zwart scherm zodra de
-werkende timerroutine, of de pixel-touchmode, werd vervangen. De werkende
-timer is die in dit script. De calibratiepagina blijft zoals hij is.
+Het menuprogramma is hetzelfde bestand op de cracked schijf en op de
+originele schijf. Op de cracked schijf staat `MAIN\PLAY_SND.INI` uit en
+staan de nummers op 0 seconden, dus het menu blijft stil. De kastimage
+gebruikt de originele lijst: `class001.wav` 60 seconden, `schwing.wav` 30
+seconden, `tech_1.wav` 30 seconden, korte effecten ertussen, en de
+kerstnummers (elk tot 300 seconden) van 1 tot en met 31 december. Een tune
+die met een spel meekomt, komt uit dat spel, bijvoorbeeld
+`STONES\TITLTUNE.WAV`. Die tune gebruikt de screensaverlijst niet.
