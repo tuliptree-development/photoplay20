@@ -15,6 +15,15 @@ programs the script copies. Photo Play is by Funworld. `ELODEV.EXE` is Elo's
 touch driver. `SETAUDIO.COM` and `C3DMIX.COM` are by C-Media Electronics
 (1999). `CKUSB.EXE` is Funworld's 6WEV startup tool from Photo Play 2004.
 
+Those disk images come from the Internet Archive item
+[Photoplay Dos CHD collection](https://archive.org/details/photoplay)
+(added 22 July 2024). `PP20NLC2.chd` is Photo Play 2.0. `PP2004NLC.chd` is
+the 2004 image, and it holds the Elo and C-Media programs. Extract a CHD
+with `chdman extractraw -i PP20NLC2.chd -o PP20NLC2.img`. The file that
+comes out is 2,111,864,832 bytes. The script does not accept that file as
+the 2.0 input. It needs the 2,097,930,240-byte CF copy, `PP20NLC2_cf.img`.
+The extracted 2004 image is the right size for `--pp2004`.
+
 ## What the finished card does
 
 - The menu appears after the opening picture.
@@ -233,6 +242,16 @@ het script kopieert ook niet. Photo Play is van Funworld. `ELODEV.EXE` is het
 touch-stuurprogramma van Elo. `SETAUDIO.COM` en `C3DMIX.COM` zijn van C-Media
 Electronics (1999). `CKUSB.EXE` is Funworlds 6WEV-startprogramma uit Photo
 Play 2004.
+
+Die schijfimages komen uit het Internet Archive-item
+[Photoplay Dos CHD collection](https://archive.org/details/photoplay)
+(toegevoegd 22 juli 2024). `PP20NLC2.chd` is Photo Play 2.0. `PP2004NLC.chd`
+is de 2004-image, en daar staan de Elo- en C-Media-programma's in. Een CHD
+pak je uit met `chdman extractraw -i PP20NLC2.chd -o PP20NLC2.img`. Het
+bestand dat eruit komt is 2.111.864.832 bytes. Het script neemt dat bestand
+niet aan als 2.0-invoer. Het heeft de CF-kopie van 2.097.930.240 bytes nodig,
+`PP20NLC2_cf.img`. De uitgepakte 2004-image heeft wel de juiste grootte voor
+`--pp2004`.
 
 ## Wat de afgewerkte kaart doet
 
