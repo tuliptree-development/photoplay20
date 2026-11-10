@@ -46,13 +46,14 @@ when the machine starts.
   standard library.
 - About 2 GB of free disk space for the new image.
 - The cracked Photo Play 2.0 CF image, `PP20NLC2_cf.img`, size exactly
-  2,097,930,240 bytes. The script does not put missing game files back, so
-  the games, including Stones, already have to be in that image. The larger
-  file `PP20NLC2.img` (2,111,864,832 bytes) is a different disk. Leave that
-  file unused.
-- A Photo Play 2004 image, `PP2004NLC.img`. The script reads four files from
-  it and nothing else: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`, and
-  `C3DMIX.COM`.
+  2,097,930,240 bytes. It comes from `PP20NLC2.chd` in the
+  [Photoplay Dos CHD collection](https://archive.org/details/photoplay).
+  The script does not put missing game files back, so the games, including
+  Stones, already have to be in that image. Extracting the CHD gives the
+  larger file `PP20NLC2.img` (2,111,864,832 bytes). Leave that file unused.
+- A Photo Play 2004 image, `PP2004NLC.img`, extracted from `PP2004NLC.chd`
+  in the same collection. The script reads four files from it and nothing
+  else: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`, and `C3DMIX.COM`.
 - The 2 GB Photo Play 2.0 card. In the write step, pick the disk whose size
   is about 2 GB. The computer's internal disk and a Photo Play 2004 card are
   the wrong targets.
@@ -274,13 +275,15 @@ en deze kast heeft een Elo-scherm. De mixer gaat bij het starten op maximaal.
   standaardbibliotheek van Python.
 - Ongeveer 2 GB vrije schijfruimte voor de nieuwe image.
 - De cracked Photo Play 2.0 CF-image, `PP20NLC2_cf.img`, precies 2.097.930.240
-  bytes. Het script zet ontbrekende spelbestanden niet terug, dus de spellen,
-  inclusief Stones, moeten al in die image staan. Het grotere bestand
-  `PP20NLC2.img` (2.111.864.832 bytes) is een andere schijf. Laat dat bestand
+  bytes. Die komt uit `PP20NLC2.chd` in de
+  [Photoplay Dos CHD collection](https://archive.org/details/photoplay).
+  Het script zet ontbrekende spelbestanden niet terug, dus de spellen,
+  inclusief Stones, moeten al in die image staan. De CHD uitpakken geeft het
+  grotere bestand `PP20NLC2.img` (2.111.864.832 bytes). Laat dat bestand
   liggen.
-- Een Photo Play 2004-image, `PP2004NLC.img`. Het script leest daar vier
-  bestanden uit en verder niets: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM` en
-  `C3DMIX.COM`.
+- Een Photo Play 2004-image, `PP2004NLC.img`, uitgepakt uit `PP2004NLC.chd`
+  in dezelfde verzameling. Het script leest daar vier bestanden uit en verder
+  niets: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM` en `C3DMIX.COM`.
 - De 2 GB-kaart van Photo Play 2.0. Kies bij het schrijven de schijf van
   ongeveer 2 GB. De interne schijf van de computer en een Photo Play
   2004-kaart zijn de verkeerde doelen.
