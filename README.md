@@ -10,7 +10,10 @@ four programs out of a Photo Play 2004 image. It leaves the game programs
 alone, and it does not remove a dongle check. The cracked 2.0 image is
 already without a dongle.
 
-The disk images themselves are not in this repository.
+The disk images themselves are not in this repository. Neither are the four
+programs the script copies. Photo Play is by Funworld. `ELODEV.EXE` is Elo's
+touch driver. `SETAUDIO.COM` and `C3DMIX.COM` are by C-Media Electronics
+(1999). `CKUSB.EXE` is Funworld's 6WEV startup tool from Photo Play 2004.
 
 ## What the finished card does
 
@@ -225,7 +228,11 @@ vier programma's uit een Photo Play 2004-image. De spelprogramma's blijven
 staan, en een dongle-check wordt niet weggehaald. De cracked 2.0-image is al
 zonder dongle.
 
-De schijfimages zelf zitten niet in deze repository.
+De schijfimages zelf zitten niet in deze repository. De vier programma's die
+het script kopieert ook niet. Photo Play is van Funworld. `ELODEV.EXE` is het
+touch-stuurprogramma van Elo. `SETAUDIO.COM` en `C3DMIX.COM` zijn van C-Media
+Electronics (1999). `CKUSB.EXE` is Funworlds 6WEV-startprogramma uit Photo
+Play 2004.
 
 ## Wat de afgewerkte kaart doet
 
