@@ -67,6 +67,41 @@ CARD_BYTES = 2097930240
 PART_LBA = 63
 PART_SECTORS = CARD_BYTES // 512 - PART_LBA
 
+# Files the cracked 2.0 disk lost from Stones. Sizes are the protected disk.
+# The bytes themselves stay on the user's disk.
+STONES_FILES = (
+    ("GFX", "WOOW", "PCX", 1594),
+    ("GFX", "YEAHH", "PCX", 1526),
+    ("GFX", "ZAHLEN", "PCX", 1944),
+    ("ROUNDS", "BONUS", "DTA", 305),
+    ("ROUNDS", "LEVEL1", "DTA", 374),
+    ("ROUNDS", "LEVEL2", "DTA", 407),
+    ("ROUNDS", "LEVEL3", "DTA", 459),
+    ("ROUNDS", "LEVEL4", "DTA", 270),
+    ("ROUNDS", "LEVEL5", "DTA", 358),
+    ("SFX", "05SND030", "WAV", 11156),
+    ("SFX", "05SND054", "WAV", 69788),
+    ("SFX", "06SND034", "WAV", 59876),
+    ("SFX", "BUTTON", "WAV", 12114),
+    ("SFX", "CLICK21", "WAV", 808),
+    ("SFX", "COMEON1", "WAV", 8444),
+    ("SFX", "DIRTLAUG", "WAV", 25900),
+    ("SFX", "FALSCH", "WAV", 19444),
+    ("SFX", "GAMEOVER", "WAV", 129696),
+    ("SFX", "GETBONUS", "WAV", 6426),
+    ("SFX", "GOVER", "WAV", 33698),
+    ("SFX", "HISCORE", "WAV", 41514),
+    ("SFX", "NEXTRND", "WAV", 143354),
+    ("SFX", "ROUND", "WAV", 60284),
+    ("SFX", "SCRATCH", "WAV", 1610),
+    ("SFX", "TIMESE20", "WAV", 40020),
+    ("SFX", "TIMEUP", "WAV", 13354),
+    ("SFX", "TOUCHST", "WAV", 9292),
+    ("SFX", "UNMARK", "WAV", 7608),
+    ("SFX", "WELLCOME", "WAV", 13532),
+    ("SFX", "WRONG", "WAV", 10380),
+)
+
 ELO_LINE = (
     b"\\touch\\elo\\ELODEV 2310,3,9600,3 -C1,4096,4096,1,1,255 -W0 -I65\r\n"
 )
@@ -350,6 +385,97 @@ def add_file(image, directory, directory_cluster, name, ext, payload):
     return image.read_dir(directory_cluster)
 
 
+def stones_holes(image):
+    holes = []
+    try:
+        root = image.read_root()
+        stones = image.read_dir(find_entry(root, "STONES", directory=True)[2])
+    except SystemExit:
+        return list(STONES_FILES)
+    folders = {}
+    for folder, name, ext, size in STONES_FILES:
+        if folder not in folders:
+            try:
+                item = find_entry(stones, folder, directory=True)
+                folders[folder] = image.read_dir(item[2])
+            except SystemExit:
+                folders[folder] = None
+        directory = folders[folder]
+        if directory is None:
+            holes.append((folder, name, ext, size))
+            continue
+        try:
+            data, _ = read_named(image, directory, name, ext)
+        except SystemExit:
+            holes.append((folder, name, ext, size))
+            continue
+        if len(data) == 0:
+            holes.append((folder, name, ext, size))
+    return holes
+
+
+def put_file(image, directory, directory_cluster, name, ext, payload):
+    count = max(1, (len(payload) + image.cluster - 1) // image.cluster)
+    first = None
+    prev = None
+    for _ in range(count):
+        cluster = image.alloc()
+        if first is None:
+            first = cluster
+        if prev is not None:
+            image.setfat(prev, cluster)
+        prev = cluster
+    remaining = payload
+    cluster = first
+    while remaining:
+        chunk = remaining[: image.cluster]
+        remaining = remaining[image.cluster :]
+        buf = bytearray(image.cluster)
+        buf[: len(chunk)] = chunk
+        image.f.seek(image.cluster_offset(cluster))
+        image.f.write(buf)
+        cluster = image.getfat(cluster)
+    replaced = False
+    for item in entries(directory):
+        if item[0] == name and item[1] == ext:
+            struct.pack_into("<H", directory, item[5] + 26, first)
+            set_size(directory, item[5], len(payload))
+            replaced = True
+            break
+    if not replaced:
+        append_entry(directory, make_entry(name, ext, 0x20, cluster=first, size=len(payload)))
+    image.write_dir(directory_cluster, directory)
+
+
+def restore_stones(image, donor_path, holes):
+    donor = Image(donor_path)
+    try:
+        donor_root = donor.read_root()
+        donor_stones = donor.read_dir(find_entry(donor_root, "STONES", directory=True)[2])
+        out_root = image.read_root()
+        out_stones = image.read_dir(find_entry(out_root, "STONES", directory=True)[2])
+        donor_dirs = {}
+        out_dirs = {}
+        for folder, name, ext, size in holes:
+            if folder not in donor_dirs:
+                item = find_entry(donor_stones, folder, directory=True)
+                donor_dirs[folder] = donor.read_dir(item[2])
+                out_item = find_entry(out_stones, folder, directory=True)
+                out_dirs[folder] = [image.read_dir(out_item[2]), out_item[2]]
+            data, _ = read_named(donor, donor_dirs[folder], name, ext)
+            if len(data) != size:
+                raise SystemExit(
+                    f"STONES\\{folder}\\{name}.{ext} is {len(data)} bytes on the "
+                    f"source disk, expected {size}"
+                )
+            directory, directory_cluster = out_dirs[folder]
+            put_file(image, directory, directory_cluster, name, ext, data)
+            out_dirs[folder][0] = image.read_dir(directory_cluster)
+            print(f"STONES\\{folder}\\{name}.{ext}", len(data))
+    finally:
+        donor.close()
+
+
 def filesystem_end(image):
     last = 2
     for cluster in range(2, len(image.fat) // 2):
@@ -387,18 +513,31 @@ def copy_for_card(src, dst):
     print("fitted the disk image to the 2 GB card")
 
 
-def build(source, pp2004, output):
+def build(source, pp2004, output, stones_from=None):
     source = Path(source)
     pp2004 = Path(pp2004)
     output = Path(output)
-    if output.resolve() in {source.resolve(), pp2004.resolve()}:
+    stones_from = Path(stones_from) if stones_from else None
+    protected = {source.resolve(), pp2004.resolve()}
+    if stones_from is not None:
+        protected.add(stones_from.resolve())
+    if output.resolve() in protected:
         raise SystemExit("output must be a new file")
     probe = Image(source)
     if probe.spc != 64 or probe.cluster != 32768:
         probe.close()
         raise SystemExit("unexpected FAT layout on the Photo Play 2.0 image")
+    holes = stones_holes(probe)
     end = filesystem_end(probe)
     probe.close()
+    if holes and stones_from is None:
+        missing = "\n".join(f"  STONES\\{folder}\\{name}.{ext}" for folder, name, ext, _ in holes)
+        raise SystemExit(
+            "Stones is missing sound, round, or picture files. They are not stored "
+            "in this script. Re-run with --stones-from pointing at a Photo Play 2.0 "
+            "disk that still has them, such as the protected PP20NL image.\n"
+            + missing
+        )
     if end > CARD_BYTES:
         raise SystemExit("the Photo Play files extend past the 2 GB card")
     print("copy", source, "->", output)
@@ -457,6 +596,8 @@ def build(source, pp2004, output):
     media = add_file(out, media, media_cluster, "C3DMIX", "COM", c3dmix)
     out.write_dir(sound_item[2], sound)
     out.write_root(root)
+    if holes:
+        restore_stones(out, stones_from, holes)
     out.flush_fats()
     out.f.flush()
     verify(out)
@@ -489,6 +630,8 @@ def verify(image):
     driver, _ = read_named(image, elo, "ELODEV", "EXE")
     if hashlib.md5(driver).hexdigest() != ELODEV_MD5:
         raise SystemExit("ELODEV verification failed")
+    if stones_holes(image):
+        raise SystemExit("Stones files are still missing")
     print("verified")
 
 
@@ -512,8 +655,12 @@ def main():
         default=here / "cracked_IGO2000" / "PP20NLC2_cabinet.img",
         help="new cabinet image to create",
     )
+    parser.add_argument(
+        "--stones-from",
+        help="Photo Play 2.0 disk that still has the Stones sounds, used when the input disk lost them",
+    )
     args = parser.parse_args()
-    build(args.source, args.pp2004, args.output)
+    build(args.source, args.pp2004, args.output, args.stones_from)
 
 
 if __name__ == "__main__":

@@ -49,7 +49,10 @@ when the machine starts.
   [Photoplay Dos CHD collection](https://archive.org/details/photoplay),
   `PP20NL.chd` is the protected Dutch disk and `PP20NLC2.chd` is the same
   games without the dongle check. The games, including Stones, already have
-  to be on that disk. The script does not add missing game files.
+  to be on that disk. The script does not add missing game files. The cracked
+  disk is missing the Stones sound effects, the round files, and three
+  pictures. Those recordings are not in this repository. Pass the protected
+  disk as `--stones-from` and the script copies them across.
 - A Photo Play 2004 image, `PP2004NLC.img`, extracted from `PP2004NLC.chd`
   in the same collection. The script reads four files from it and nothing
   else: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`, and `C3DMIX.COM`.
@@ -106,11 +109,12 @@ With the images somewhere else, one line, and your own paths. Quotes matter
 when a path contains spaces:
 
 ```bash
-python build_cabinet_image.py --input "C:\images\PP20NL.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
+python build_cabinet_image.py --input "C:\images\PP20NLC2.img" --pp2004 "C:\images\PP2004NLC.img" --stones-from "C:\images\PP20NL.img" --output "C:\images\PP20NLC2_cabinet.img"
 ```
 
 On Linux or macOS the same line works. Use the paths on that computer, for
-example `--input "$HOME/images/PP20NL.img"`.
+example `--input "$HOME/images/PP20NLC2.img"`. Leave `--stones-from` out when
+the 2.0 disk already has the Stones sounds.
 
 The script copies the 2.0 disk, then changes that copy. A larger disk is
 trimmed to the 2 GB card. The two source images stay as they were. Wait
@@ -270,7 +274,10 @@ en deze kast heeft een Elo-scherm. De mixer gaat bij het starten op maximaal.
   [Photoplay Dos CHD collection](https://archive.org/details/photoplay)
   is `PP20NL.chd` de beveiligde Nederlandse schijf en `PP20NLC2.chd` dezelfde
   spellen zonder dongle-check. De spellen, inclusief Stones, moeten al op die
-  schijf staan. Het script zet ontbrekende spelbestanden niet terug.
+  schijf staan. Het script zet ontbrekende spelbestanden niet terug. Op de
+  cracked schijf ontbreken de Stones-geluiden, de rondebestanden en drie
+  plaatjes. Die opnames zitten niet in deze repository. Geef de beveiligde
+  schijf mee als `--stones-from` en het script kopieert ze.
 - Een Photo Play 2004-image, `PP2004NLC.img`, uitgepakt uit `PP2004NLC.chd`
   in dezelfde verzameling. Het script leest daar vier bestanden uit en verder
   niets: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM` en `C3DMIX.COM`.
@@ -328,11 +335,12 @@ Met de images ergens anders, op één regel, met je eigen paden. Aanhalingsteken
 zijn nodig als een pad spaties bevat:
 
 ```bash
-python build_cabinet_image.py --input "C:\images\PP20NL.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
+python build_cabinet_image.py --input "C:\images\PP20NLC2.img" --pp2004 "C:\images\PP2004NLC.img" --stones-from "C:\images\PP20NL.img" --output "C:\images\PP20NLC2_cabinet.img"
 ```
 
 Op Linux of macOS werkt dezelfde regel. Gebruik de paden van die computer,
-bijvoorbeeld `--input "$HOME/images/PP20NL.img"`.
+bijvoorbeeld `--input "$HOME/images/PP20NLC2.img"`. Laat `--stones-from` weg
+wanneer de 2.0-schijf de Stones-geluiden al heeft.
 
 Het script kopieert de 2.0-schijf en past die kopie aan. Een grotere schijf
 wordt bijgesneden tot de 2 GB-kaart. De twee bronimages blijven zoals ze
