@@ -5,10 +5,11 @@ These notes and this script are for a Funworld Photo Play Spirit 2.1 with a
 supports that board. Photo Play 2.0 (PP20NLC2, July 1997) needs the image
 from the script, written to its 2 GB card.
 
-The script builds that image. It starts from a cracked 2.0 card and copies
-four programs out of a Photo Play 2004 image. It leaves the game programs
-alone, and it does not remove a dongle check. The cracked 2.0 image is
-already without a dongle.
+The script builds that image from a Photo Play 2.0 disk. The disk can be
+protected or already without its dongle, and the language does not matter
+when `MAIN.COM` is the July 1997 program. The script copies four programs
+out of a Photo Play 2004 image. It leaves the game programs alone, so a
+dongle check that is present stays present.
 
 The disk images themselves are not in this repository. Neither are the four
 programs the script copies. Photo Play is by Funworld. `ELODEV.EXE` is Elo's
@@ -17,12 +18,11 @@ touch driver. `SETAUDIO.COM` and `C3DMIX.COM` are by C-Media Electronics
 
 Those disk images come from the Internet Archive item
 [Photoplay Dos CHD collection](https://archive.org/details/photoplay)
-(added 22 July 2024). `PP20NLC2.chd` is Photo Play 2.0. `PP2004NLC.chd` is
-the 2004 image, and it holds the Elo and C-Media programs. Extract a CHD
-with `chdman extractraw -i PP20NLC2.chd -o PP20NLC2.img`. The file that
-comes out is 2,111,864,832 bytes. The script does not accept that file as
-the 2.0 input. It needs the 2,097,930,240-byte CF copy, `PP20NLC2_cf.img`.
-The extracted 2004 image is the right size for `--pp2004`.
+(added 22 July 2024). `PP20NL.chd` is the protected Dutch 2.0 disk.
+`PP20NLC2.chd` is the same 2.0 games without the dongle check.
+`PP2004NLC.chd` holds the Elo and C-Media programs. Extract a CHD with
+`chdman extractraw -i PP20NL.chd -o PP20NL.img`. That file is 2,111,864,832
+bytes. The script accepts it and writes a 2,097,930,240-byte card image.
 
 ## What the finished card does
 
@@ -33,7 +33,7 @@ The extracted 2004 image is the right size for `--pp2004`.
   been left idle. That is the screensaver list.
 - From 1 through 31 December, with the cabinet date in December, the
   screensaver plays the Christmas tracks.
-- The service button on port 210h is the same as on the cracked card.
+- The service button on port 210h is unchanged.
 
 The admin calibration screen and the louder button are left as they are.
 The calibration targets are drawn only after a MicroTouch controller
@@ -45,12 +45,11 @@ when the machine starts.
 - Python 3 on Windows, Linux, or macOS. The script uses only the Python
   standard library.
 - About 2 GB of free disk space for the new image.
-- The cracked Photo Play 2.0 CF image, `PP20NLC2_cf.img`, size exactly
-  2,097,930,240 bytes. It comes from `PP20NLC2.chd` in the
-  [Photoplay Dos CHD collection](https://archive.org/details/photoplay).
-  The script does not put missing game files back, so the games, including
-  Stones, already have to be in that image. Extracting the CHD gives the
-  larger file `PP20NLC2.img` (2,111,864,832 bytes). Leave that file unused.
+- A Photo Play 2.0 disk from July 1997, protected or not. In the
+  [Photoplay Dos CHD collection](https://archive.org/details/photoplay),
+  `PP20NL.chd` is the protected Dutch disk and `PP20NLC2.chd` is the same
+  games without the dongle check. The games, including Stones, already have
+  to be on that disk. The script does not add missing game files.
 - A Photo Play 2004 image, `PP2004NLC.img`, extracted from `PP2004NLC.chd`
   in the same collection. The script reads four files from it and nothing
   else: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM`, and `C3DMIX.COM`.
@@ -87,15 +86,9 @@ parent/
     PP2004NLC.img              Photo Play 2004 image
 ```
 
-From that parent folder, check the 2.0 file. This works on Windows, Linux,
-and macOS:
-
-```bash
-python -c "import os; print(os.path.getsize('cracked_IGO2000/PP20NLC2_cf.img'))"
-```
-
-The number must be `2097930240`. If the command `python` is missing, use
-`python3` instead, here and in the next step.
+An extracted 2.0 CHD is 2,111,864,832 bytes. The script trims that to the
+2 GB card. If the command `python` is missing, use `python3` instead, here
+and in the next step.
 
 Images can also stay in any other folder. Pass their full paths in step 3.
 
@@ -113,21 +106,20 @@ With the images somewhere else, one line, and your own paths. Quotes matter
 when a path contains spaces:
 
 ```bash
-python build_cabinet_image.py --cracked "C:\images\PP20NLC2_cf.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
+python build_cabinet_image.py --input "C:\images\PP20NL.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
 ```
 
 On Linux or macOS the same line works. Use the paths on that computer, for
-example `--cracked "$HOME/images/PP20NLC2_cf.img"`.
+example `--input "$HOME/images/PP20NL.img"`.
 
-The script copies the cracked card, then changes that copy. The two source
-images stay as they were. Wait until the last lines say `verified` and
-`wrote ...`. With the default layout the new file is
-`cracked_IGO2000/PP20NLC2_cabinet.img`. It is the same size as the cracked
-card: 2,097,930,240 bytes.
+The script copies the 2.0 disk, then changes that copy. A larger disk is
+trimmed to the 2 GB card. The two source images stay as they were. Wait
+until the last lines say `verified` and `wrote ...`. With the default layout
+the new file is `cracked_IGO2000/PP20NLC2_cabinet.img`. It is 2,097,930,240
+bytes.
 
-The script stops with an error when the 2.0 image has the wrong size, when
-`MAIN.COM` is not the cracked program it expects, or when `ELODEV.EXE` in
-the 2004 image is not the expected file.
+The script stops with an error when `MAIN.COM` is not the July 1997 program,
+or when `ELODEV.EXE` in the 2004 image is not the expected file.
 
 ### 4. Write the image to the card
 
@@ -178,7 +170,7 @@ tune. Leave the menu alone for a while to hear the screensaver music.
 
 ## What the script changes
 
-1. It copies the cracked 2.0 card to a new file.
+1. It copies the 2.0 disk to a new file and trims a larger disk to the 2 GB card.
 2. It patches `MAIN.COM` so the Elo driver starts in mode `0x0E`, and so a
    finger-up counts only after about 50 ms. The patched file must have md5
    `0b7385681f88c946a1ad9b907f6952cc`.
@@ -233,10 +225,11 @@ een 6WEV-moederbord en een Elo 2500S-touchscreen. Photo Play 2004 ondersteunt
 dat bord al. Photo Play 2.0 (PP20NLC2, juli 1997) heeft de image uit het
 script nodig, geschreven naar de 2 GB-kaart.
 
-Het script maakt die image. Het begint bij een cracked 2.0-kaart en kopieert
-vier programma's uit een Photo Play 2004-image. De spelprogramma's blijven
-staan, en een dongle-check wordt niet weggehaald. De cracked 2.0-image is al
-zonder dongle.
+Het script maakt die image van een Photo Play 2.0-schijf. De schijf mag
+beveiligd zijn of al zonder dongle, en de taal maakt niet uit wanneer
+`MAIN.COM` het programma van juli 1997 is. Het script kopieert vier
+programma's uit een Photo Play 2004-image. De spelprogramma's blijven staan,
+dus een dongle-check die erin zit, blijft erin.
 
 De schijfimages zelf zitten niet in deze repository. De vier programma's die
 het script kopieert ook niet. Photo Play is van Funworld. `ELODEV.EXE` is het
@@ -246,13 +239,12 @@ Play 2004.
 
 Die schijfimages komen uit het Internet Archive-item
 [Photoplay Dos CHD collection](https://archive.org/details/photoplay)
-(toegevoegd 22 juli 2024). `PP20NLC2.chd` is Photo Play 2.0. `PP2004NLC.chd`
-is de 2004-image, en daar staan de Elo- en C-Media-programma's in. Een CHD
-pak je uit met `chdman extractraw -i PP20NLC2.chd -o PP20NLC2.img`. Het
-bestand dat eruit komt is 2.111.864.832 bytes. Het script neemt dat bestand
-niet aan als 2.0-invoer. Het heeft de CF-kopie van 2.097.930.240 bytes nodig,
-`PP20NLC2_cf.img`. De uitgepakte 2004-image heeft wel de juiste grootte voor
-`--pp2004`.
+(toegevoegd 22 juli 2024). `PP20NL.chd` is de beveiligde Nederlandse
+2.0-schijf. `PP20NLC2.chd` zijn dezelfde 2.0-spellen zonder dongle-check.
+`PP2004NLC.chd` bevat de Elo- en C-Media-programma's. Een CHD pak je uit met
+`chdman extractraw -i PP20NL.chd -o PP20NL.img`. Dat bestand is 2.111.864.832
+bytes. Het script neemt het aan en schrijft een kaartimage van 2.097.930.240
+bytes.
 
 ## Wat de afgewerkte kaart doet
 
@@ -263,7 +255,7 @@ niet aan als 2.0-invoer. Het heeft de CF-kopie van 2.097.930.240 bytes nodig,
   even met rust is gelaten. Dat is de screensaverlijst.
 - Van 1 tot en met 31 december, als de datum van de kast in december valt,
   speelt de screensaver de kerstnummers.
-- De serviceknop op poort 210h is dezelfde als op de cracked kaart.
+- De serviceknop op poort 210h blijft ongewijzigd.
 
 Het admin-scherm voor calibratie en de luider-knop blijven zoals ze zijn.
 De calibratiedoelen verschijnen pas als een MicroTouch-controller antwoordt,
@@ -274,13 +266,11 @@ en deze kast heeft een Elo-scherm. De mixer gaat bij het starten op maximaal.
 - Python 3 op Windows, Linux of macOS. Het script gebruikt alleen de
   standaardbibliotheek van Python.
 - Ongeveer 2 GB vrije schijfruimte voor de nieuwe image.
-- De cracked Photo Play 2.0 CF-image, `PP20NLC2_cf.img`, precies 2.097.930.240
-  bytes. Die komt uit `PP20NLC2.chd` in de
-  [Photoplay Dos CHD collection](https://archive.org/details/photoplay).
-  Het script zet ontbrekende spelbestanden niet terug, dus de spellen,
-  inclusief Stones, moeten al in die image staan. De CHD uitpakken geeft het
-  grotere bestand `PP20NLC2.img` (2.111.864.832 bytes). Laat dat bestand
-  liggen.
+- Een Photo Play 2.0-schijf van juli 1997, beveiligd of niet. In de
+  [Photoplay Dos CHD collection](https://archive.org/details/photoplay)
+  is `PP20NL.chd` de beveiligde Nederlandse schijf en `PP20NLC2.chd` dezelfde
+  spellen zonder dongle-check. De spellen, inclusief Stones, moeten al op die
+  schijf staan. Het script zet ontbrekende spelbestanden niet terug.
 - Een Photo Play 2004-image, `PP2004NLC.img`, uitgepakt uit `PP2004NLC.chd`
   in dezelfde verzameling. Het script leest daar vier bestanden uit en verder
   niets: `ELODEV.EXE`, `CKUSB.EXE`, `SETAUDIO.COM` en `C3DMIX.COM`.
@@ -317,15 +307,9 @@ boven/
     PP2004NLC.img              Photo Play 2004-image
 ```
 
-Vanuit die bovenliggende map controleer je het 2.0-bestand. Dit werkt op
-Windows, Linux en macOS:
-
-```bash
-python -c "import os; print(os.path.getsize('cracked_IGO2000/PP20NLC2_cf.img'))"
-```
-
-Het getal moet `2097930240` zijn. Bestaat het commando `python` niet, gebruik
-dan `python3`, hier en in de volgende stap.
+Een uitgepakte 2.0-CHD is 2.111.864.832 bytes. Het script past dat aan tot
+de 2 GB-kaart. Bestaat het commando `python` niet, gebruik dan `python3`,
+hier en in de volgende stap.
 
 De images mogen ook in een andere map blijven. Geef hun volledige pad mee in
 stap 3.
@@ -344,21 +328,20 @@ Met de images ergens anders, op één regel, met je eigen paden. Aanhalingsteken
 zijn nodig als een pad spaties bevat:
 
 ```bash
-python build_cabinet_image.py --cracked "C:\images\PP20NLC2_cf.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
+python build_cabinet_image.py --input "C:\images\PP20NL.img" --pp2004 "C:\images\PP2004NLC.img" --output "C:\images\PP20NLC2_cabinet.img"
 ```
 
 Op Linux of macOS werkt dezelfde regel. Gebruik de paden van die computer,
-bijvoorbeeld `--cracked "$HOME/images/PP20NLC2_cf.img"`.
+bijvoorbeeld `--input "$HOME/images/PP20NL.img"`.
 
-Het script kopieert de cracked kaart en past die kopie aan. De twee
-bronimages blijven zoals ze waren. Wacht tot de laatste regels `verified`
-en `wrote ...` zeggen. Bij de standaardindeling is het nieuwe bestand
-`cracked_IGO2000/PP20NLC2_cabinet.img`. Het is even groot als de cracked
-kaart: 2.097.930.240 bytes.
+Het script kopieert de 2.0-schijf en past die kopie aan. Een grotere schijf
+wordt bijgesneden tot de 2 GB-kaart. De twee bronimages blijven zoals ze
+waren. Wacht tot de laatste regels `verified` en `wrote ...` zeggen. Bij de
+standaardindeling is het nieuwe bestand `cracked_IGO2000/PP20NLC2_cabinet.img`.
+Het is 2.097.930.240 bytes.
 
-Het script stopt met een fout als de 2.0-image de verkeerde grootte heeft,
-als `MAIN.COM` niet het cracked programma is dat het verwacht, of als
-`ELODEV.EXE` in de 2004-image niet het verwachte bestand is.
+Het script stopt met een fout als `MAIN.COM` niet het programma van juli 1997
+is, of als `ELODEV.EXE` in de 2004-image niet het verwachte bestand is.
 
 ### 4. Schrijf de image naar de kaart
 
@@ -411,7 +394,7 @@ spel te horen. Laat het menu even met rust om de screensavermuziek te horen.
 
 ## Wat het script verandert
 
-1. Het kopieert de cracked 2.0-kaart naar een nieuw bestand.
+1. Het kopieert de 2.0-schijf naar een nieuw bestand en snijdt een grotere schijf bij tot de 2 GB-kaart.
 2. Het past `MAIN.COM` aan, zodat de Elo-driver in mode `0x0E` start en een
    loslaten pas na ongeveer 50 ms telt. Het aangepaste bestand moet md5
    `0b7385681f88c946a1ad9b907f6952cc` hebben.

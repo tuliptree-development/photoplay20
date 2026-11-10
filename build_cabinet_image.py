@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""Build the Photo Play 2.0 cabinet image from the cracked CF image.
+"""Build a Photo Play 2.0 image for a Spirit 2.1 cabinet.
 
-Reads PP20NLC2_cf.img and copies three programs out of the Photo Play 2004
-image (ELODEV, CKUSB, SETAUDIO, C3DMIX). Writes a new image. Does not modify
-the inputs, does not remove a dongle, and does not change the service button.
+The input is a July 1997 Photo Play 2.0 disk: any language, with or without
+the dongle. The script copies ELODEV, CKUSB, SETAUDIO and C3DMIX out of a
+Photo Play 2004 image, starts those drivers, and patches MAIN.COM so the Elo
+screen and the C-Media chip work. It does not modify the inputs, does not
+remove a dongle, and does not change the service button.
 
-The result matches the card that ran on the Spirit 2.1 cabinet:
-MAIN.COM md5 0b7385681f88c946a1ad9b907f6952cc.
+The written file is the 2 GB card size. A larger disk image is trimmed to
+that size when its files fit.
 """
 
 import argparse
 import hashlib
-import shutil
 import struct
 import sys
 from pathlib import Path
@@ -38,6 +39,33 @@ ELO_INIT = bytes.fromhex(
     + "00"
 )
 assert len(POLL) == 153 and len(TIMER_JUMP) == 5 and len(ELO_INIT) == 296
+
+# Bytes MAIN.COM must contain before the touch patch. A matching file is the
+# July 1997 program, whichever language or dongle the rest of the disk uses.
+OLD_POLL = bytes.fromhex(
+    "505351521e8ccb8edbbaea03ec24010f85c700baed03ec24010f84bd00bae803ec"
+    "803e6b020074133c0d745f803e6b02087245c6066b0200e99f003c1c740f3c19740b"
+    "3c1874173c017403e98c00bb6c028807c6066b0201a06b02eb7d90c6065e0200c606"
+    "6b02008b0e5a028b165c028a1e5e02cd62eb62bb6c028a166b0232f603da8807fe06"
+    "6b02eb4fbb6c028a166b0232f603da8807fe"
+)
+OLD_TIMER = bytes.fromhex("66011e8b02")
+OLD_ELO = bytes.fromhex(
+    "521ebaeb03b080eebae803b00ceebae903b000eebaec03b00beebaeb03b006eeb001"
+    "e848f8b052e843f8b00de83ef8e8a4f9e8a1f9e89ef9e89bf9b001e82df8b041e828"
+    "f8b044e823f8b00de81ef8e884f9b001e816f8b050e811f8b04ee80cf8b038e807f8"
+    "b031e802f8b00de8fdf7e863f9baeb03b003eee83901a08109b435cd218c064c0289"
+    "1e4e02a08109ba000ab425cd21b001bae903eefae4a18ae0e421a34a0223068209e6"
+    "218ac4e6a1fbb001e8b8f7b052e8b3f7b00de8aef7e814f9e811f9e80ef9e80bf9b0"
+    "01e89df7b041e898f7b044e893f7b00de88ef7e8f4f8b001e886f7b046e881f7b048"
+    "e87cf7b00de877f7e8ddf8b001e86ff7b04de86af7b054e865f7b00de860f7e8c6f8"
+    "b001e858f7b050e853f7b04ce84ef7b00de849f7c6065902"
+)
+assert len(OLD_POLL) == 153 and len(OLD_TIMER) == 5 and len(OLD_ELO) == 296
+
+CARD_BYTES = 2097930240
+PART_LBA = 63
+PART_SECTORS = CARD_BYTES // 512 - PART_LBA
 
 ELO_LINE = (
     b"\\touch\\elo\\ELODEV 2310,3,9600,3 -C1,4096,4096,1,1,255 -W0 -I65\r\n"
@@ -241,28 +269,39 @@ def file_from(image, folder_parts, name, ext):
     return data
 
 
+def main_regions(data):
+    return (
+        data[0x900 : 0x900 + len(POLL)],
+        data[0xA91 : 0xA91 + len(TIMER_JUMP)],
+        data[0x1017 : 0x1017 + len(ELO_INIT)],
+    )
+
+
 def patch_main(image, root):
     main_dir_item = find_entry(root, "MAIN", directory=True)
     main_dir = image.read_dir(main_dir_item[2])
     data, item = read_named(image, main_dir, "MAIN", "COM")
     digest = hashlib.md5(data).hexdigest()
-    if digest == GOOD_MAIN:
+    regions = main_regions(data)
+    if digest == GOOD_MAIN or regions == (POLL, TIMER_JUMP, ELO_INIT):
         print("MAIN.COM already patched")
         return
-    if digest != ORIG_MAIN:
-        raise SystemExit(f"MAIN.COM md5 is {digest}, expected the cracked {ORIG_MAIN}")
+    if regions != (OLD_POLL, OLD_TIMER, OLD_ELO):
+        raise SystemExit(
+            "MAIN.COM is not the July 1997 program this touch change fits"
+        )
     if data[0xC0B : 0xC0B + 6] != SERVICE:
         raise SystemExit("service button bytes are not the cabinet button")
     patched = bytearray(data)
     patched[0x900 : 0x900 + len(POLL)] = POLL
     patched[0xA91 : 0xA91 + len(TIMER_JUMP)] = TIMER_JUMP
     patched[0x1017 : 0x1017 + len(ELO_INIT)] = ELO_INIT
-    if hashlib.md5(patched).hexdigest() != GOOD_MAIN:
+    if digest == ORIG_MAIN and hashlib.md5(patched).hexdigest() != GOOD_MAIN:
         raise SystemExit("MAIN.COM patch did not reproduce the cabinet program")
     if patched[0xC0B : 0xC0B + 6] != SERVICE:
         raise SystemExit("service button changed")
     image.write_file_cluster(item[2], patched)
-    print("MAIN.COM", GOOD_MAIN)
+    print("MAIN.COM", hashlib.md5(patched).hexdigest())
 
 
 def replace_text_file(image, directory, name, ext, old_prefix, new_bytes):
@@ -270,8 +309,14 @@ def replace_text_file(image, directory, name, ext, old_prefix, new_bytes):
     if data == new_bytes:
         print(f"{name}.{ext} already set")
         return directory
-    if not data.startswith(old_prefix):
-        raise SystemExit(f"{name}.{ext} does not start with the cracked text")
+    if name == "PLAY_SND" and not data.startswith(old_prefix):
+        print(f"{name}.{ext} left unchanged")
+        return directory
+    if name == "SND_INIT" and not data.startswith(old_prefix):
+        if b"esscfg" not in data.lower():
+            raise SystemExit(f"{name}.{ext} is not the Photo Play 2.0 sound startup")
+    elif not data.startswith(old_prefix):
+        raise SystemExit(f"{name}.{ext} does not have the expected Photo Play 2.0 text")
     image.write_file_cluster(item[2], new_bytes)
     set_size(directory, item[5], len(new_bytes))
     print(f"{name}.{ext} {len(data)} -> {len(new_bytes)} bytes")
@@ -305,20 +350,59 @@ def add_file(image, directory, directory_cluster, name, ext, payload):
     return image.read_dir(directory_cluster)
 
 
-def build(cracked, pp2004, output):
-    cracked = Path(cracked)
+def filesystem_end(image):
+    last = 2
+    for cluster in range(2, len(image.fat) // 2):
+        if image.getfat(cluster) != 0:
+            last = cluster
+    return (image.data_lba + (last - 1) * image.spc) * 512
+
+
+def copy_for_card(src, dst):
+    size = src.stat().st_size
+    if size < CARD_BYTES:
+        raise SystemExit(
+            f"{src} is {size} bytes. Photo Play 2.0 for this card is "
+            f"{CARD_BYTES} bytes, or the larger disk image that contains it."
+        )
+    with src.open("rb") as source, dst.open("wb") as target:
+        left = CARD_BYTES
+        while left:
+            chunk = source.read(min(8 * 1024 * 1024, left))
+            if len(chunk) != min(8 * 1024 * 1024, left):
+                raise SystemExit(f"{src} ended before {CARD_BYTES} bytes")
+            target.write(chunk)
+            left -= len(chunk)
+    if size == CARD_BYTES:
+        return
+    with dst.open("r+b") as card:
+        card.seek(446 + 8)
+        lba = struct.unpack("<I", card.read(4))[0]
+        if lba != PART_LBA:
+            raise SystemExit("partition does not start at sector 63")
+        card.seek(446 + 12)
+        card.write(struct.pack("<I", PART_SECTORS))
+        card.seek(PART_LBA * 512 + 32)
+        card.write(struct.pack("<I", PART_SECTORS))
+    print("fitted the disk image to the 2 GB card")
+
+
+def build(source, pp2004, output):
+    source = Path(source)
     pp2004 = Path(pp2004)
     output = Path(output)
-    if output.resolve() in {cracked.resolve(), pp2004.resolve()}:
+    if output.resolve() in {source.resolve(), pp2004.resolve()}:
         raise SystemExit("output must be a new file")
-    if cracked.stat().st_size != 2097930240:
-        raise SystemExit("cracked image must be the 2,097,930,240-byte CF image")
-    probe = Image(cracked)
+    probe = Image(source)
     if probe.spc != 64 or probe.cluster != 32768:
-        raise SystemExit("unexpected FAT layout on the cracked image")
+        probe.close()
+        raise SystemExit("unexpected FAT layout on the Photo Play 2.0 image")
+    end = filesystem_end(probe)
     probe.close()
-    print("copy", cracked, "->", output)
-    shutil.copyfile(cracked, output)
+    if end > CARD_BYTES:
+        raise SystemExit("the Photo Play files extend past the 2 GB card")
+    print("copy", source, "->", output)
+    copy_for_card(source, output)
 
     src = Image(pp2004)
     elodev = file_from(src, ["TOUCH", "ELO"], "ELODEV", "EXE")
@@ -341,7 +425,7 @@ def build(cracked, pp2004, output):
     if ELO_LINE in autopts:
         print("AUTOPTS.BAT already starts ELODEV")
     elif needle not in autopts:
-        raise SystemExit("AUTOPTS.BAT does not have the cracked startup")
+        raise SystemExit("AUTOPTS.BAT does not start the sound script before main")
     else:
         updated = autopts.replace(needle, insert, 1)
         out.write_file_cluster(auto_item[2], updated)
@@ -387,12 +471,12 @@ def verify(image):
     root = image.read_root()
     main_dir = image.read_dir(find_entry(root, "MAIN", directory=True)[2])
     main, _ = read_named(image, main_dir, "MAIN", "COM")
-    if hashlib.md5(main).hexdigest() != GOOD_MAIN:
+    if main_regions(main) != (POLL, TIMER_JUMP, ELO_INIT):
         raise SystemExit("MAIN.COM verification failed")
     if main[0xC0B : 0xC0B + 6] != SERVICE:
         raise SystemExit("service button verification failed")
     play, _ = read_named(image, main_dir, "PLAY_SND", "INI")
-    if play != PLAYLIST:
+    if play != PLAYLIST and play.startswith(b"OFF\r\n"):
         raise SystemExit("playlist verification failed")
     autopts, _ = read_named(image, root, "AUTOPTS", "BAT")
     if ELO_LINE not in autopts or b"H5" in autopts:
@@ -412,9 +496,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     here = Path(__file__).resolve().parents[1]
     parser.add_argument(
+        "--input",
         "--cracked",
+        dest="source",
         default=here / "cracked_IGO2000" / "PP20NLC2_cf.img",
-        help="cracked Photo Play 2.0 CF image",
+        help="Photo Play 2.0 image, protected or not",
     )
     parser.add_argument(
         "--pp2004",
@@ -427,7 +513,7 @@ def main():
         help="new cabinet image to create",
     )
     args = parser.parse_args()
-    build(args.cracked, args.pp2004, args.output)
+    build(args.source, args.pp2004, args.output)
 
 
 if __name__ == "__main__":
